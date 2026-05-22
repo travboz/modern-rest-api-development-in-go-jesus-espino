@@ -1,5 +1,8 @@
 package main
 
+import "time"
+
+// Handler types
 type ShoppingList struct {
 	ID    int      `json:"id"`
 	Name  string   `json:"name"`
@@ -13,4 +16,21 @@ type ShoppingListPatch struct {
 
 type ListPushAction struct {
 	Items []string `json:"items"`
+}
+
+// Authentication types
+type User struct {
+	Role     string
+	Username string
+	Password string
+}
+
+type Session struct {
+	Expires  time.Time
+	Username string
+}
+
+type LoginRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
 }

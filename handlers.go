@@ -2,8 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"math/rand"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 func handleCreateList(w http.ResponseWriter, r *http.Request) {
@@ -168,4 +170,32 @@ func handleListPush(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Error(w, "List not found", http.StatusNotFound)
+}
+
+func handleLogin(w http.ResponseWriter, r *http.Request) {
+	var payload LoginRequest
+
+	err := json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	user, exists := allUsers[payload.Username] // fetch user from user store
+	if exists && user.Password == payload.Password {
+		token := strconv.Itoa(rand.Intn(100000000000))
+		sessions[token] = &Session{
+			Expires:  time.Now().Add(1 * 24 * time.Hour),
+			Username: user.Username,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		err = json.NewEncoder(w).Encode(map[string]string{"token": token})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+	// user doesn't exist, or password is wrong
+	w.WriteHeader(http.StatusUnauthorized)
 }

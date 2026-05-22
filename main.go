@@ -24,13 +24,15 @@ func seedShoppingList() {
 func main() {
 	port := 8888
 
-	http.HandleFunc("POST /v1/lists", handleCreateList)
-	http.HandleFunc("GET /v1/lists", handleFetchAllLists)
-	http.HandleFunc("DELETE /v1/lists/{id}", handleDeleteList)
-	http.HandleFunc("PUT /v1/lists/{id}", handleUpdateList)
-	http.HandleFunc("PATCH /v1/lists/{id}", handlePartialUpdateList)
-	http.HandleFunc("GET /v1/lists/{id}", handleFetchListById)
-	http.HandleFunc("POST /v1/lists/{id}/push", handleListPush)
+	http.HandleFunc("POST /v1/lists", authRequired(handleCreateList))
+	http.HandleFunc("GET /v1/lists", authRequired(handleFetchAllLists))
+	http.HandleFunc("DELETE /v1/lists/{id}", authRequired(handleDeleteList))
+	http.HandleFunc("PUT /v1/lists/{id}", authRequired(handleUpdateList))
+	http.HandleFunc("PATCH /v1/lists/{id}", authRequired(handlePartialUpdateList))
+	http.HandleFunc("GET /v1/lists/{id}", authRequired(handleFetchListById))
+	http.HandleFunc("POST /v1/lists/{id}/push", authRequired(handleListPush))
+
+	http.HandleFunc("POST /login", handleLogin)
 
 	seedShoppingList()
 
