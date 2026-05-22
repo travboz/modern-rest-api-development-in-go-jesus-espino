@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: "3"
+
+vars:
+  ENTRYPOINT_DIR: "."
+
+tasks:
+  start:
+    desc: Run the server
+    cmds:
+      - go run {{ .ENTRYPOINT_DIR }}
