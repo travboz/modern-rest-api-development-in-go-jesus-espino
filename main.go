@@ -30,6 +30,7 @@ func main() {
 	http.HandleFunc("PUT /v1/lists/{id}", handleUpdateList)
 	http.HandleFunc("PATCH /v1/lists/{id}", handlePartialUpdateList)
 	http.HandleFunc("GET /v1/lists/{id}", handleFetchListById)
+	http.HandleFunc("POST /v1/lists/{id}/push", handleListPush)
 
 	seedShoppingList()
 

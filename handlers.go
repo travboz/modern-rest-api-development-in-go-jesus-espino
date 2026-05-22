@@ -138,3 +138,34 @@ func handleFetchListById(w http.ResponseWriter, r *http.Request) {
 
 	http.Error(w, "List not found", http.StatusNotFound)
 }
+
+func handleListPush(w http.ResponseWriter, r *http.Request) {
+	// check if list exists
+	id := r.PathValue("id")
+	for i, list := range allData {
+		// check if shopping list exists
+		if strconv.Itoa(list.ID) == id {
+			// it exists, so add to its items list
+			var push ListPushAction
+
+			err := json.NewDecoder(r.Body).Decode(&push)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			list.Items = append(list.Items, push.Items...)
+
+			allData[i] = list
+
+			err = json.NewEncoder(w).Encode(list)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			return
+		}
+	}
+
+	http.Error(w, "List not found", http.StatusNotFound)
+}
