@@ -14,28 +14,52 @@ import (
 func authRequired(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := r.Header.Get("Authorization")
+
+		// check that there is a token in the auth header
 		if !strings.HasPrefix(token, "Bearer ") {
-			http.Error(w, "Missing authorization header", http.StatusUnauthorized)
+			http.Error(w, "missing authorization header", http.StatusUnauthorized)
 			return
 		}
 
+		// we have a token
 		token = token[7:]
+		// check if there is a session that exists for this token
 		if sessions[token] == nil {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
 
+		// session exists, check if session has expired
 		if sessions[token].Expires.Before(time.Now()) {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
 
-		_, exists := allUsers[sessions[token].Username]
-		if !exists {
+		// session exists, check if user exists
+		_, userExists := allUsers[sessions[token].Username]
+		if !userExists {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
 
+		// user has a valid session, and is a user
 		next(w, r)
 	}
+}
+
+func adminRoleRequired(next http.HandlerFunc) http.HandlerFunc {
+	return authRequired(func(w http.ResponseWriter, r *http.Request) {
+		token := r.Header.Get("Authorization")
+		token = token[7:]
+
+		// by this point, the auth header exists, there is a non-expired session for the user and that user exists
+
+		user := allUsers[sessions[token].Username] // fetch user for role check
+		if user.Role != "admin" {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+
+		next(w, r)
+	})
 }
