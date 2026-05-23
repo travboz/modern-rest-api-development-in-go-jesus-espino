@@ -3,7 +3,6 @@ package main
 import (
 	"net/http"
 	"strings"
-	"time"
 )
 
 // This middleware checks the Authorization header to get the user token,
@@ -24,20 +23,8 @@ func authRequired(next http.HandlerFunc) http.HandlerFunc {
 		// we have a token
 		token = token[7:]
 		// check if there is a session that exists for this token
-		if sessions[token] == nil {
-			http.Error(w, "unauthorized", http.StatusUnauthorized)
-			return
-		}
-
-		// session exists, check if session has expired
-		if sessions[token].Expires.Before(time.Now()) {
-			http.Error(w, "unauthorized", http.StatusUnauthorized)
-			return
-		}
-
-		// session exists, check if user exists
-		_, userExists := allUsers[sessions[token].Username]
-		if !userExists {
+		_, err := repository.GetSession(token)
+		if err != nil {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
@@ -54,8 +41,13 @@ func adminRoleRequired(next http.HandlerFunc) http.HandlerFunc {
 
 		// by this point, the auth header exists, there is a non-expired session for the user and that user exists
 
-		user := allUsers[sessions[token].Username] // fetch user for role check
-		if user.Role != "admin" {
+		userRole, err := repository.GetUserRoleFromSession(token)
+		if err != nil {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		if userRole != "admin" {
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}

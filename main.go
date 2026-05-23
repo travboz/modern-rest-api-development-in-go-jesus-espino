@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 )
 
 var allData []ShoppingList
@@ -21,7 +22,21 @@ func seedShoppingList() {
 	log.Println("seeded shopping lists")
 }
 
+var repository *Repository
+
 func main() {
+	var err error
+	repository, err = NewRepository("./data/database.db")
+	if err != nil {
+		log.Println("Unable to open the database:", err.Error())
+		os.Exit(1)
+	}
+
+	if err := repository.Init(); err != nil {
+		log.Println("Unable to initialise the database:", err.Error())
+		os.Exit(1)
+	}
+
 	port := 8888
 
 	http.HandleFunc("GET /v1/lists", authRequired(handleFetchAllLists))
@@ -40,7 +55,7 @@ func main() {
 
 	log.Printf("listening on port :%d", port)
 
-	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	err = http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	if err != nil {
 		log.Fatal(err)
 	}

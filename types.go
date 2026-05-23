@@ -26,6 +26,7 @@ type User struct {
 }
 
 type Session struct {
+	Token    string // Add token to session object
 	Expires  time.Time
 	Username string
 }

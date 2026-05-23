@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"math/rand"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -183,7 +183,12 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 
 	user, exists := allUsers[payload.Username] // fetch user from user store
 	if exists && user.Password == payload.Password {
-		token := strconv.Itoa(rand.Intn(100000000000))
+		token, err := GenerateSessionToken()
+		if err != nil {
+			http.Error(w, fmt.Errorf("error generating token: %w", err).Error(), http.StatusInternalServerError)
+			return
+		}
+
 		sessions[token] = &Session{
 			Expires:  time.Now().Add(1 * 24 * time.Hour),
 			Username: user.Username,
