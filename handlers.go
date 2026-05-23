@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -16,7 +17,12 @@ func handleCreateList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	allData = append(allData, list)
+	err = repository.CreateNewShoppingList(&list)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusCreated)
 
 	err = json.NewEncoder(w).Encode(list)
@@ -27,7 +33,13 @@ func handleCreateList(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleFetchAllLists(w http.ResponseWriter, r *http.Request) {
-	data, err := json.Marshal(allData)
+	shoppingLists, err := repository.GetAllShoppingLists()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data, err := json.Marshal(shoppingLists)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -40,43 +52,55 @@ func handleFetchAllLists(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleDeleteList(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
-	for i, list := range allData {
-		if strconv.Itoa(list.ID) == id {
-			allData = append(allData[:i], allData[i+1:]...)
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, fmt.Errorf("Invalid id: [%w]", err).Error(), http.StatusBadRequest)
+		return
 	}
 
-	http.Error(w, "List not found", http.StatusNotFound)
+	err = repository.DeleteShoppingList(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrRecordNotFound):
+			http.Error(w, "Shopping list not found", http.StatusNotFound)
+		default:
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
-// handleUpdateList handles a modification of an entire shopping list
+// handleUpdateList handles an update of an entire shopping list
 func handleUpdateList(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
-	for i, list := range allData {
-		// check if shopping list exists
-		if strconv.Itoa(list.ID) == id {
-			// it exists, so now decode the body
-			var updatedList ShoppingList
-			err := json.NewDecoder(r.Body).Decode(&updatedList)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-
-			allData[i] = updatedList // replace the current list with the updated list
-
-			if err := json.NewEncoder(w).Encode(updatedList); err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			return
-		}
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, fmt.Errorf("Invalid id: [%w]", err).Error(), http.StatusBadRequest)
+		return
 	}
 
-	http.Error(w, "List not found", http.StatusNotFound)
+	l, err := repository.GetListByID(id)
+	if err != nil || l == nil {
+		http.Error(w, "Shopping list not found", http.StatusNotFound)
+		return
+	}
+
+	// it exists, so now decode the body
+	var updatedList ShoppingList
+	err = json.NewDecoder(r.Body).Decode(&updatedList)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// TODO: perform update - add in repository method and finish handler
+
+	if err := json.NewEncoder(w).Encode(updatedList); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func handlePartialUpdateList(w http.ResponseWriter, r *http.Request) {
@@ -118,27 +142,28 @@ func handlePartialUpdateList(w http.ResponseWriter, r *http.Request) {
 
 // handleFetchListById fetches a single shopping list by its
 func handleFetchListById(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
-	for _, list := range allData {
-		// check if shopping list exists
-		if strconv.Itoa(list.ID) == id {
-			// it exists, so send it to the client
-			data, err := json.Marshal(list)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-
-			_, err = w.Write(data)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			return // because successfully written to response
-		}
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, fmt.Errorf("Invalid id: [%w]", err).Error(), http.StatusBadRequest)
+		return
 	}
 
-	http.Error(w, "List not found", http.StatusNotFound)
+	list, err := repository.GetListByID(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrRecordNotFound):
+			http.Error(w, "Shopping list not found", http.StatusNotFound)
+		default:
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+
+		return
+	}
+
+	err = json.NewEncoder(w).Encode(list)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func handleListPush(w http.ResponseWriter, r *http.Request) {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -57,6 +58,16 @@ func (r *Repository) Init() error {
 		if _, err := r.db.Exec(createTableQuery); err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (r *Repository) Empty() error {
+	query := sq.Delete("shopping_lists")
+	_, err := query.RunWith(r.db).Exec()
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -127,6 +138,99 @@ func (r *Repository) GetUserRoleFromSession(token string) (string, error) {
 	}
 
 	return user.Role, nil
+}
+
+// sqlCreateShoppingListTable = `
+// 		CREATE TABLE IF NOT EXISTS shopping_lists (
+// 			id VARCHAR PRIMARY KEY,
+// 			name VARCHAR,
+// 			items TEXT
+// 		);
+// 	`
+
+func (r *Repository) CreateNewShoppingList(list *ShoppingList) error {
+	args := []any{list.ID, list.Name, strings.Join(list.Items, ",")}
+	query := sq.Insert("shopping_lists").Columns("id", "name", "items").Values(args...)
+
+	_, err := query.RunWith(r.db).Exec()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *Repository) GetAllShoppingLists() ([]*ShoppingList, error) {
+	query := sq.Select("id", "name", "items").From("shopping_lists")
+
+	rows, err := query.RunWith(r.db).Query()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	shoppingLists := make([]*ShoppingList, 0)
+
+	for rows.Next() {
+		var list ShoppingList
+
+		var items string
+
+		if err := rows.Scan(&list.ID, &list.Name, &items); err != nil {
+			return nil, err
+		}
+
+		list.Items = strings.Split(items, ",")
+
+		shoppingLists = append(shoppingLists, &list)
+	}
+
+	return shoppingLists, nil
+}
+
+var (
+	ErrRecordNotFound = errors.New("Record not found")
+)
+
+func (r *Repository) GetListByID(id int) (*ShoppingList, error) {
+	query := sq.Select("id", "name", "items").From("shopping_lists").Where(sq.Eq{"id": id})
+
+	row := query.RunWith(r.db).QueryRow()
+
+	var shopList ShoppingList
+	var listItems string
+
+	if err := row.Scan(&shopList.ID, &shopList.Name, &listItems); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrRecordNotFound
+		}
+
+		return nil, err
+	}
+
+	shopList.Items = strings.Split(listItems, ",")
+
+	return &shopList, nil
+}
+
+func (r *Repository) DeleteShoppingList(id int) error {
+	query := sq.Delete("shopping_lists").Where(sq.Eq{"id": id})
+
+	result, err := query.RunWith(r.db).Exec()
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+
+	return nil
 }
 
 func (r *Repository) PatchShoppingList(id string, patch *ShoppingListPatch) error {
