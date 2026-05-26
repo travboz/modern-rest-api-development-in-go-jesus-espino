@@ -3,6 +3,8 @@ package main
 import (
 	"net/http"
 	"strings"
+
+	"github.com/rs/cors"
 )
 
 // This middleware checks the Authorization header to get the user token,
@@ -54,4 +56,28 @@ func adminRoleRequired(roleRequired string, next http.HandlerFunc) http.HandlerF
 
 		next(w, r)
 	})
+}
+
+// We create our CORS middleware with the API domain and port, and pass a list of the allowed methods and headers.
+// Also, we define MaxAge there to allow caching pre-flight requests for 300 seconds. We use the middleware created
+// to wrap our mux variable, adding CORS to all our APIs.
+func corsWrapper(mux *http.ServeMux) http.Handler {
+	corsMiddleware := cors.New(cors.Options{
+		AllowedOrigins: []string{"http://localhost:3000"},
+		AllowedMethods: []string{
+			http.MethodGet,
+			http.MethodPost,
+			http.MethodPut,
+			http.MethodPatch,
+			http.MethodDelete,
+			http.MethodOptions,
+		},
+		AllowedHeaders: []string{
+			"Content-Type",
+			"Authorization",
+		},
+		MaxAge: 300,
+	})
+
+	return corsMiddleware.Handler(mux)
 }

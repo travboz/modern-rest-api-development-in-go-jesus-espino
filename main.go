@@ -55,19 +55,14 @@ func main() {
 
 	port := 8888
 
-	http.HandleFunc("GET /v1/lists", handleFetchAllLists)
-	http.HandleFunc("POST /v1/lists", adminRoleRequired("admin", handleCreateList))
-	http.HandleFunc("GET /v1/lists/{id}", authRequired(handleFetchListById))
-	http.HandleFunc("PUT /v1/lists/{id}", adminRoleRequired("admin", handleUpdateList))
-	http.HandleFunc("DELETE /v1/lists/{id}", adminRoleRequired("admin", handleDeleteList))
-	http.HandleFunc("PATCH /v1/lists/{id}", adminRoleRequired("admin", handlePartialUpdateList))
-	http.HandleFunc("POST /v1/lists/{id}/push", adminRoleRequired("admin", handleListPush))
+	mux := http.NewServeMux()
 
-	http.HandleFunc("POST /login", handleLogin)
+	SetupRoutes(mux)
+	handler := corsWrapper(mux)
 
 	log.Printf("listening on port :%d", port)
 
-	err = http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	err = http.ListenAndServe(fmt.Sprintf(":%d", port), handler)
 	if err != nil {
 		log.Fatal(err)
 	}
