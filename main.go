@@ -60,10 +60,14 @@ func main() {
 	SetupRoutes(mux)
 	handler := corsWrapper(mux)
 
+	server := &http.Server{
+		Addr:    fmt.Sprintf(":%d", port),
+		Handler: handler,
+	}
+
 	log.Printf("listening on port :%d", port)
 
-	err = http.ListenAndServe(fmt.Sprintf(":%d", port), handler)
-	if err != nil {
+	if err := server.ListenAndServe(); err != nil {
 		log.Fatal(err)
 	}
 }
