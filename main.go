@@ -31,7 +31,7 @@ func seedShoppingList() error {
 }
 
 var (
-	repository *Repository
+	repository RepositoryInterface
 	listsCache *lru.Cache[string, *ShoppingList]
 )
 

@@ -11,6 +11,20 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+type RepositoryInterface interface {
+	Init() error
+	Empty() error
+	AddSession(username string) (*Session, error)
+	GetSession(token string) (*Session, error)
+	GetUserRoleFromSession(token string) (string, error)
+	CreateNewShoppingList(list *ShoppingList) error
+	GetAllShoppingLists() ([]*ShoppingList, error)
+	GetListByID(id int) (*ShoppingList, error)
+	DeleteShoppingList(id int) error
+	PatchShoppingList(id int, patch *ShoppingListPatch) error
+	UpdateShoppingList(update *ShoppingList) error
+}
+
 type Repository struct {
 	db *sql.DB
 }

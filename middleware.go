@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/rs/cors"
 )
@@ -80,4 +81,12 @@ func corsWrapper(mux *http.ServeMux) http.Handler {
 	})
 
 	return corsMiddleware.Handler(mux)
+}
+
+func addCacheHeaders(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "public, max-age=300")
+		w.Header().Set("Expires", time.Now().Add(5*time.Minute).Format(http.TimeFormat))
+		next(w, r)
+	}
 }
