@@ -34,20 +34,20 @@ func authRequired(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func adminRoleRequired(next http.HandlerFunc) http.HandlerFunc {
+func adminRoleRequired(roleRequired string, next http.HandlerFunc) http.HandlerFunc {
 	return authRequired(func(w http.ResponseWriter, r *http.Request) {
 		token := r.Header.Get("Authorization")
 		token = token[7:]
 
 		// by this point, the auth header exists, there is a non-expired session for the user and that user exists
 
-		userRole, err := repository.GetUserRoleFromSession(token)
+		role, err := repository.GetUserRoleFromSession(token)
 		if err != nil {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
 
-		if userRole != "admin" {
+		if role != roleRequired {
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}

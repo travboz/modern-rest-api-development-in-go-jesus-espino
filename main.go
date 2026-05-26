@@ -56,16 +56,12 @@ func main() {
 	port := 8888
 
 	http.HandleFunc("GET /v1/lists", handleFetchAllLists)
-
-	// http.HandleFunc("GET /v1/lists", authRequired(handleFetchAllLists))
-	http.HandleFunc("POST /v1/lists", adminRoleRequired(handleCreateList))
-
+	http.HandleFunc("POST /v1/lists", adminRoleRequired("admin", handleCreateList))
 	http.HandleFunc("GET /v1/lists/{id}", authRequired(handleFetchListById))
-	http.HandleFunc("PUT /v1/lists/{id}", adminRoleRequired(handleUpdateList))
-	http.HandleFunc("DELETE /v1/lists/{id}", adminRoleRequired(handleDeleteList))
-	http.HandleFunc("PATCH /v1/lists/{id}", adminRoleRequired(handlePartialUpdateList))
-
-	http.HandleFunc("POST /v1/lists/{id}/push", adminRoleRequired(handleListPush))
+	http.HandleFunc("PUT /v1/lists/{id}", adminRoleRequired("admin", handleUpdateList))
+	http.HandleFunc("DELETE /v1/lists/{id}", adminRoleRequired("admin", handleDeleteList))
+	http.HandleFunc("PATCH /v1/lists/{id}", adminRoleRequired("admin", handlePartialUpdateList))
+	http.HandleFunc("POST /v1/lists/{id}/push", adminRoleRequired("admin", handleListPush))
 
 	http.HandleFunc("POST /login", handleLogin)
 

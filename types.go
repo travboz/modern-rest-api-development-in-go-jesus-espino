@@ -9,12 +9,17 @@ type ShoppingList struct {
 	Items []string `json:"items"`
 }
 
+type ShoppingListUpdateRequest struct {
+	Name  string   `json:"name"`
+	Items []string `json:"items"`
+}
+
 type ShoppingListPatch struct {
 	Name  *string  `json:"name"`
 	Items []string `json:"items"`
 }
 
-type ListPushAction struct {
+type ShoppingListPushRequest struct {
 	Items []string `json:"items"`
 }
 

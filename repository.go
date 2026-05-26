@@ -233,7 +233,7 @@ func (r *Repository) DeleteShoppingList(id int) error {
 	return nil
 }
 
-func (r *Repository) PatchShoppingList(id string, patch *ShoppingListPatch) error {
+func (r *Repository) PatchShoppingList(id int, patch *ShoppingListPatch) error {
 	query := sq.Update("shopping_lists").Where(sq.Eq{"id": id})
 
 	if patch.Name != nil {
@@ -250,4 +250,24 @@ func (r *Repository) PatchShoppingList(id string, patch *ShoppingListPatch) erro
 
 	return nil
 
+}
+
+func (r *Repository) UpdateShoppingList(update *ShoppingList) error {
+	query := sq.Update("shoppings_lists").Where(sq.Eq{"id": update.ID}).Set("name", update.Name).Set("items", strings.Join(update.Items, ","))
+
+	result, err := query.RunWith(r.db).Exec()
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+
+	return nil
 }
