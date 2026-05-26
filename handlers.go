@@ -107,6 +107,9 @@ func handleUpdateList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// modified the list by updating, so invalidate the cache
+	listsCache.Remove(fmt.Sprintf("%d", id))
+
 	if err := json.NewEncoder(w).Encode(updatedList); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -134,6 +137,9 @@ func handlePartialUpdateList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// modified the list by patching, so invalidate the cache
+	listsCache.Remove(fmt.Sprintf("%d", id))
+
 	err = json.NewEncoder(w).Encode(ShoppingList{
 		ID:    id,
 		Name:  *patch.Name,
@@ -148,22 +154,30 @@ func handlePartialUpdateList(w http.ResponseWriter, r *http.Request) {
 // Use browser caching here to reduce and ETags for reusing cached responses.
 // handleFetchListById fetches a single shopping list by its ID
 func handleFetchListById(w http.ResponseWriter, r *http.Request) {
+	var err error
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		http.Error(w, fmt.Errorf("Invalid id: [%w]", err).Error(), http.StatusBadRequest)
 		return
 	}
 
-	list, err := repository.GetListByID(id)
-	if err != nil {
-		switch {
-		case errors.Is(err, ErrRecordNotFound):
-			http.Error(w, "Shopping list not found", http.StatusNotFound)
-		default:
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
+	// ok = cache hit
+	list, ok := listsCache.Get(fmt.Sprintf("%d", id))
+	if !ok {
+		// NOT OK = cache miss - so fetch from db
+		list, err = repository.GetListByID(id)
+		if err != nil {
+			switch {
+			case errors.Is(err, ErrRecordNotFound):
+				http.Error(w, "Shopping list not found", http.StatusNotFound)
+			default:
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
 
-		return
+			return
+		}
+		// add to cache for next time
+		listsCache.Add(fmt.Sprintf("%d", id), list)
 	}
 
 	data, err := json.Marshal(list)
@@ -223,6 +237,9 @@ func handleListPush(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	// modified the list by patching, so invalidate the cache
+	listsCache.Remove(fmt.Sprintf("%d", id))
 
 	err = json.NewEncoder(w).Encode(list)
 	if err != nil {

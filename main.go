@@ -5,9 +5,9 @@ import (
 	"log"
 	"net/http"
 	"os"
-)
 
-var allData []ShoppingList
+	lru "github.com/hashicorp/golang-lru/v2"
+)
 
 func seedShoppingList() error {
 	err := repository.Empty()
@@ -30,30 +30,38 @@ func seedShoppingList() error {
 	return nil
 }
 
-var repository *Repository
+var (
+	repository *Repository
+	listsCache *lru.Cache[string, *ShoppingList]
+)
 
 func main() {
 	var err error
+	listsCache, err = lru.New[string, *ShoppingList](128)
+	if err != nil {
+		log.Println("Unable to initialise the lists cache:", "erorr", err.Error())
+	}
+
 	repository, err = NewRepository("./data/database.db")
 	if err != nil {
-		log.Println("Unable to open the database:", err.Error())
+		log.Println("Unable to open the database:", "error", err.Error())
 		os.Exit(1)
 	}
 
 	if err := repository.Init(); err != nil {
-		log.Println("Unable to initialise the database:", err.Error())
+		log.Println("Unable to initialise the database:", "error", err.Error())
 		os.Exit(1)
 	}
 
 	err = seedShoppingList()
 	if err != nil {
-		log.Println("Unable to seed the database:", err.Error())
+		log.Println("Unable to seed the database:", "error", err.Error())
 		os.Exit(1)
 	}
 
 	log.Println("Successfully seeded shopping lists")
 
-	port := 8888
+	port := fmt.Sprintf(":%d", 8888)
 
 	mux := http.NewServeMux()
 
@@ -61,11 +69,11 @@ func main() {
 	handler := corsWrapper(mux)
 
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%d", port),
+		Addr:    port,
 		Handler: handler,
 	}
 
-	log.Printf("listening on port :%d", port)
+	log.Println("listening on port", "addr", port)
 
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatal(err)
