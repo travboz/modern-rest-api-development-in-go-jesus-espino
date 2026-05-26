@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -144,7 +145,8 @@ func handlePartialUpdateList(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// handleFetchListById fetches a single shopping list by its
+// Use browser caching here to reduce and ETags for reusing cached responses.
+// handleFetchListById fetches a single shopping list by its ID
 func handleFetchListById(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
@@ -164,10 +166,25 @@ func handleFetchListById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = json.NewEncoder(w).Encode(list)
+	data, err := json.Marshal(list)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
+
+	// In this case, we want to pass the Cache-Control: no-cache configuration
+	// to ensure the client always revalidates the cache with the server using
+	// the recently added ETag header.
+	w.Header().Set("Cache-Control", "no-cache")
+
+	etag := fmt.Sprintf(`"%x`, sha256.Sum256(data))
+	if match := r.Header.Get("If-None-Match"); match == etag {
+		w.WriteHeader(http.StatusNotModified)
+		return
+	}
+
+	w.Header().Set("ETag", etag)
+	w.Write(data)
 }
 
 func handleListPush(w http.ResponseWriter, r *http.Request) {
