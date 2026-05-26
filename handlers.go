@@ -70,6 +70,8 @@ func handleDeleteList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// deleted the list, so invalidate the cache
+	listsCache.Remove(fmt.Sprintf("%d", id))
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -260,17 +262,6 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	// fetch user from user store
 	user, exists := allUsers[payload.Username] // fetch user from user store
 	if exists && user.Password == payload.Password {
-		// token, err := GenerateSessionToken()
-		// if err != nil {
-		// 	http.Error(w, fmt.Errorf("error generating token: %w", err).Error(), http.StatusInternalServerError)
-		// 	return
-		// }
-
-		// sessions[token] = &Session{
-		// 	Expires:  time.Now().Add(1 * 24 * time.Hour),
-		// 	Username: user.Username,
-		// }
-
 		session, err := repository.AddSession(user.Username)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
