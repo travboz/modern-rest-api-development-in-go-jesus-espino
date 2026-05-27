@@ -19,7 +19,7 @@ import (
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param list body ShopingList true "Shopping list data"
+// @Param list body ShoppingList true "Shopping list data"
 // @Success 201 {object} ShoppingList
 // @Failure 400 {string} string "Bad Request"
 // @Failure 401 {string} string "Unauthorized"

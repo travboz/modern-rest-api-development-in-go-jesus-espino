@@ -163,8 +163,8 @@ func (r *Repository) GetUserRoleFromSession(token string) (string, error) {
 // 	`
 
 func (r *Repository) CreateNewShoppingList(list *ShoppingList) error {
-	args := []any{list.ID, list.Name, strings.Join(list.Items, ",")}
-	query := sq.Insert("shopping_lists").Columns("id", "name", "items").Values(args...)
+	args := []any{list.Name, strings.Join(list.Items, ",")}
+	query := sq.Insert("shopping_lists").Columns("name", "items").Values(args...)
 	// TODO: Need to return ID of new shopping list
 	_, err := query.RunWith(r.db).Exec()
 	if err != nil {

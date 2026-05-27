@@ -2,7 +2,7 @@
 // @version         0.1
 // @description     An API for managing shopping lists
 
-// @host            my-shopping-lists.com/api
+// @host            localhost:8888
 // @BasePath        /v1
 
 // @securityDefinitions.apikey  BearerAuth
@@ -20,6 +20,8 @@ import (
 
 	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/lmittmann/tint"
+
+	_ "github.com/travboz/modern-rest-api-dev/shopping-list-api/docs" // for swagger api docs
 )
 
 func seedShoppingList() error {

@@ -10,3 +10,8 @@ tasks:
     desc: Run the server
     cmds:
       - go run {{ .ENTRYPOINT_DIR }}
+
+  generate-docs:
+    desc: Use swaggo/swag to run the swag binary to generate API documentation from Swagger annotations
+    cmds:
+      - swag init
