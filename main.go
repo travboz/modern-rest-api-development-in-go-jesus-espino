@@ -22,39 +22,18 @@ import (
 	"github.com/lmittmann/tint"
 
 	_ "github.com/travboz/modern-rest-api-dev/shopping-list-api/docs" // for swagger api docs
+	"github.com/travboz/modern-rest-api-dev/shopping-list-api/metrics"
 )
-
-func seedShoppingList() error {
-	err := repository.Empty()
-	if err != nil {
-		return err
-	}
-
-	lists := []ShoppingList{
-		{Name: "Saturday shopping list", Items: []string{"bread", "ice cream", "milk", "pasta", "toothpaste", "eggs", "soap", "detergent"}},
-		{Name: "Hamburger night", Items: []string{"beef patties", "burger rolls", "eggs", "bacon", "tomatoes", "sliced cheese", "bbq sauce", "beetroot", "butter", "lettuce"}},
-	}
-
-	for _, l := range lists {
-		err := repository.CreateNewShoppingList(&l)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
 
 const (
 	KitchenWithSeconds = "03:04:05 PM"
 )
 
-// tint.Err(exampleError) for RED COLOURED error hightlighting
-
 var (
-	repository RepositoryInterface
-	listsCache *lru.Cache[string, *ShoppingList]
-	logger     *slog.Logger
+	repository     RepositoryInterface
+	listsCache     *lru.Cache[string, *ShoppingList]
+	logger         *slog.Logger
+	metricsService *metrics.Metrics
 )
 
 func main() {
@@ -63,6 +42,8 @@ func main() {
 		AddSource:  true,
 		TimeFormat: KitchenWithSeconds,
 	}))
+
+	metricsService = metrics.NewMetrics()
 
 	var err error
 	listsCache, err = lru.New[string, *ShoppingList](128)
