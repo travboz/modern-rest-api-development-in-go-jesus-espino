@@ -21,7 +21,7 @@ type RepositoryInterface interface {
 	GetAllShoppingLists() ([]*ShoppingList, error)
 	GetListByID(id int) (*ShoppingList, error)
 	DeleteShoppingList(id int) error
-	PatchShoppingList(id int, patch *ShoppingListPatch) error
+	PatchShoppingList(id int, patch *ShoppingListPatchRequest) error
 	UpdateShoppingList(update *ShoppingList) error
 }
 
@@ -58,7 +58,7 @@ const (
 
 	sqlCreateShoppingListTable = `
 		CREATE TABLE IF NOT EXISTS shopping_lists (
-			id VARCHAR PRIMARY KEY,
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			name VARCHAR,
 			items TEXT
 		);
@@ -165,7 +165,7 @@ func (r *Repository) GetUserRoleFromSession(token string) (string, error) {
 func (r *Repository) CreateNewShoppingList(list *ShoppingList) error {
 	args := []any{list.ID, list.Name, strings.Join(list.Items, ",")}
 	query := sq.Insert("shopping_lists").Columns("id", "name", "items").Values(args...)
-
+	// TODO: Need to return ID of new shopping list
 	_, err := query.RunWith(r.db).Exec()
 	if err != nil {
 		return err
@@ -247,7 +247,7 @@ func (r *Repository) DeleteShoppingList(id int) error {
 	return nil
 }
 
-func (r *Repository) PatchShoppingList(id int, patch *ShoppingListPatch) error {
+func (r *Repository) PatchShoppingList(id int, patch *ShoppingListPatchRequest) error {
 	query := sq.Update("shopping_lists").Where(sq.Eq{"id": id})
 
 	if patch.Name != nil {

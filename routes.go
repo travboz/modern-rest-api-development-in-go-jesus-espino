@@ -12,5 +12,5 @@ func SetupRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("PATCH /v1/lists/{id}", adminRoleRequired("admin", handlePartialUpdateList))
 	mux.HandleFunc("POST /v1/lists/{id}/push", adminRoleRequired("admin", handleListPush))
 
-	mux.HandleFunc("POST /login", handleLogin)
+	mux.HandleFunc("POST /v1/login", handleLogin)
 }

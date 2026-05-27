@@ -2,23 +2,32 @@ package main
 
 import "time"
 
-// Handler types
+// ShoppingList represents a shopping list with items
+// @Description Shopping list with items
 type ShoppingList struct {
-	ID    int      `json:"id"`
-	Name  string   `json:"name"`
-	Items []string `json:"items"`
+	ID    int      `json:"id" example:"1001"`
+	Name  string   `json:"name" example:"Grocery List"`
+	Items []string `json:"items" example:"milk,eggs,bread"`
 }
 
+// TODO: Potentially create CreateShoppingListRequest and CreateShoppingListResponse
+
+// ShoppingListUpdateRequest represents complete updates to a shopping list
+// @Description Complete shopping list update structure
 type ShoppingListUpdateRequest struct {
 	Name  string   `json:"name"`
 	Items []string `json:"items"`
 }
 
-type ShoppingListPatch struct {
+// ShoppingListPatch represents partial updates to a shopping list
+// @Description Partial shopping list update structure
+type ShoppingListPatchRequest struct {
 	Name  *string  `json:"name"`
 	Items []string `json:"items"`
 }
 
+// ShoppingListPushRequest represents items to append to a shopping list
+// @Description Request body for pushing items onto a list
 type ShoppingListPushRequest struct {
 	Items []string `json:"items"`
 }
@@ -36,6 +45,8 @@ type Session struct {
 	Username string
 }
 
+// LoginRequest represents user login credentials
+// @Description User login request structure
 type LoginRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`

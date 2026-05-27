@@ -5,6 +5,7 @@ go 1.26.2
 require (
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/hashicorp/golang-lru/v2 v2.0.7
+	github.com/lmittmann/tint v1.1.3
 	github.com/mattn/go-sqlite3 v1.14.44
 	github.com/rs/cors v1.11.1
 )
